@@ -1,0 +1,81 @@
+# Set language, locale, and keyboard layout
+locale: fi_FI.UTF-8
+language: en_US
+keyboard:
+  layout: fi
+
+# Configure network connection
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: true
+      optional: true
+  wifis:
+    wlan0:
+      dhcp4: true
+      access-points:
+        "RobitTablet":
+          password: "your_password_here"
+
+# Enable SSH
+ssh:
+  install-server: true
+  allow-pw: true
+
+# Create users
+users:
+  - name: admin
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+  - name: shareduser
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+
+# Set the root password (optional, you can remove or replace it with your own)
+passwords:
+  root: "$6$rounds=656000$random_salt$random_hash"
+
+# Install and enable unattended-upgrades for automatic updates
+package_update:
+  update: true
+  upgrade: true
+
+packages:
+  - unattended-upgrades
+  - apt-listchanges
+
+# Configure unattended-upgrades settings
+write_files:
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::Download-Upgradeable-Packages "1";
+      APT::Periodic::AutocleanInterval "7";
+
+  - path: /etc/apt/apt.conf.d/50unattended-upgrades
+    content: |
+      Unattended-Upgrade::Allowed-Origins {
+        "Ubuntu stable";
+        "Ubuntu ${distro_codename}-security";
+        "Ubuntu ${distro_codename}-updates";
+        "Ubuntu ${distro_codename}-proposed";
+      };
+
+# Install ClamAV
+packages:
+  - clamav
+  - clamav-daemon
+  - clamav-freshclam
+
+# Start and enable ClamAV service
+runcmd:
+  - systemctl enable clamav-freshclam
+  - systemctl start clamav-freshclam
+
+# Set the hostname to ROB-serialnumber
+runcmd:
+  - hostnamectl set-hostname "ROB-$(cat /sys/class/dmi/id/product_serial)"
+
+# Additional settings can be added below as needed
